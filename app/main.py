@@ -6,6 +6,7 @@ import psycopg
 from fastapi import FastAPI, Request, Response
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
+from app.auth import TokenVerifier
 from app.config import Settings, get_settings
 from app.db import create_pool
 
@@ -15,12 +16,16 @@ logger = logging.getLogger(__name__)
 def create_app(
     settings: Settings | None = None,
     pool: AsyncConnectionPool | None = None,
+    token_verifier: TokenVerifier | None = None,
 ) -> FastAPI:
     """App factory. Run with: uvicorn app.main:create_app --factory"""
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.pool = pool or create_pool(settings or get_settings())
+        app.state.token_verifier = token_verifier or TokenVerifier.from_settings(
+            settings or get_settings()
+        )
         await app.state.pool.open(wait=False)  # don't block startup on the DB
         try:
             yield

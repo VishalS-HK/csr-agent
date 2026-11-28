@@ -29,11 +29,13 @@ class FakePool:
 
 def make_settings(url: str, **kwargs) -> Settings:
     # _env_file=None: ignore any real .env on the machine
+    kwargs.setdefault("supabase_url", "https://test-project.supabase.co")
     return Settings(database_url=url, _env_file=None, **kwargs)
 
 
 def test_health_ok():
-    app = create_app(pool=FakePool())
+    settings = make_settings("postgresql://u:p@127.0.0.1:5432/db")
+    app = create_app(settings=settings, pool=FakePool())
     with TestClient(app) as client:
         resp = client.get("/health")
     assert resp.status_code == 200
@@ -61,3 +63,14 @@ def test_settings_reject_transaction_pooler():
 def test_settings_accept_session_mode():
     settings = make_settings("postgresql://u:p@aws-0-ap-south-1.pooler.supabase.com:5432/postgres")
     assert settings.database_url.get_secret_value().endswith(":5432/postgres")
+
+
+def test_settings_normalize_supabase_url():
+    settings = make_settings("postgresql://u:p@h:5432/db",
+                             supabase_url=" https://abc.supabase.co/ ")
+    assert settings.supabase_url == "https://abc.supabase.co"
+
+
+def test_settings_reject_non_https_supabase_url():
+    with pytest.raises(ValidationError, match="SUPABASE_URL"):
+        make_settings("postgresql://u:p@h:5432/db", supabase_url="abc.supabase.co")

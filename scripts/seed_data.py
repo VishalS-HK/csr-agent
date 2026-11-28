@@ -66,7 +66,7 @@ def _id(table: int, n: int) -> str:
 ASHA, RAHUL = _id(1, 1), _id(1, 2)
 
 CUSTOMERS = [
-    # (id, name, email). external_auth_subject is linked to Supabase Auth in PR 4.
+    # (id, name, email). Logins are linked by scripts/link_auth_users.py.
     (ASHA, "Asha Verma", "asha@example.com"),
     (RAHUL, "Rahul Mehta", "rahul@example.com"),
 ]
