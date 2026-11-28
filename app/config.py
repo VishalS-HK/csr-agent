@@ -16,9 +16,10 @@ class Settings(BaseSettings):
     db_pool_max_size: int = Field(default=10, ge=1)
     db_pool_timeout_seconds: float = Field(default=5.0, gt=0)
 
-    # Supabase Auth (PR 4)
-    supabase_url: str = ""
-    supabase_jwt_secret: SecretStr = SecretStr("")
+    # Supabase Auth
+    supabase_url: str  # https://<project-ref>.supabase.co
+    # Admin key; only scripts/link_auth_users.py uses it, never the app.
+    supabase_service_role_key: SecretStr = SecretStr("")
 
     # OpenAI (week 2)
     openai_api_key: SecretStr = SecretStr("")
@@ -33,6 +34,14 @@ class Settings(BaseSettings):
                 "DATABASE_URL points at the Supabase transaction pooler (port 6543). "
                 "Use a session-mode connection on port 5432 instead."
             )
+        return value
+
+    @field_validator("supabase_url")
+    @classmethod
+    def normalize_supabase_url(cls, value: str) -> str:
+        value = value.strip().rstrip("/")
+        if not value.startswith("https://"):
+            raise ValueError("SUPABASE_URL must be the https://<project-ref>.supabase.co URL")
         return value
 
 
